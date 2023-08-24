@@ -65,13 +65,23 @@ void cleanup_thread_info(struct thread_info *ti, int size)
 void cleanup_ctx() {
 }
 
-void *init_sreqs(int num_sreqs, void *data_buf, int msg_sz, int tag) {
+void *init_sreqs(int num_sreqs, void *data_buf, int msg_sz, int tag, struct thread_info *tinfo) {
     MPI_Request *sreqs = calloc(num_sreqs, sizeof(MPI_Request));
+    if (persistent) {
+        for (int i = 0; i < num_sreqs; i++) {
+            MPI_Send_init(data_buf, msg_sz, MPI_BYTE, my_partner, tag, tinfo->comm, &sreqs[i]);
+        }
+    }
     return (void *)sreqs;
 }
 
-void *init_rreqs(int num_rreqs, void *data_buf, int msg_sz, int tag) {
+void *init_rreqs(int num_rreqs, void *data_buf, int msg_sz, int tag, struct thread_info *tinfo) {
     MPI_Request *rreqs = calloc(num_rreqs, sizeof(MPI_Request));
+    if (persistent) {
+        for (int i = 0; i < num_rreqs; i++) {
+            MPI_Recv_init(data_buf, msg_sz, MPI_BYTE, my_partner, tag, tinfo->comm, &rreqs[i]);
+        }
+    }
     return (void *)rreqs;
 }
 
@@ -84,11 +94,23 @@ void cleanup_rreqs(void *rreqs) {
 }
 
 void nonblocking_send(void* data_buf, int msg_sz, struct thread_info *tinfo, int tag, void *sreqs, int idx) {
-    MPI_Isend(data_buf, msg_sz, MPI_BYTE, my_partner, tag, tinfo->comm, &((MPI_Request *)sreqs)[idx]);
+    MPI_Request *requests = sreqs;
+
+    if (persistent) {
+        MPI_Start(&requests[idx]);
+    } else {
+        MPI_Isend(data_buf, msg_sz, MPI_BYTE, my_partner, tag, tinfo->comm, &requests[idx]);
+    }
 }
 
 void nonblocking_recv(void* data_buf, int msg_sz, struct thread_info *tinfo, int tag, void *rreqs, int idx) {
-    MPI_Irecv(data_buf, msg_sz, MPI_BYTE, my_partner, tag, tinfo->comm, &((MPI_Request *)rreqs)[idx]);
+    MPI_Request *requests = rreqs;
+
+    if (persistent) {
+        MPI_Start(&requests[idx]);
+    } else {
+        MPI_Irecv(data_buf, msg_sz, MPI_BYTE, my_partner, tag, tinfo->comm, &requests[idx]);
+    }
 }
 
 void wait_all_sreqs(void *sreqs, struct thread_info *tinfo, int num_sreqs) {

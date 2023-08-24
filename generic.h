@@ -52,8 +52,8 @@ void *(*worker)(void *);
 void *worker_b(void *);
 void *worker_nb(void *);
 
-void *init_sreqs(int num_sreqs, void *data_buf, int msg_sz, int tag);
-void *init_rreqs(int num_rreqs, void *data_buf, int msg_sz, int tag);
+void *init_sreqs(int num_sreqs, void *data_buf, int msg_sz, int tag, struct thread_info *tinfo);
+void *init_rreqs(int num_rreqs, void *data_buf, int msg_sz, int tag, struct thread_info *tinfo);
 void cleanup_sreqs(void *sreqs);
 void cleanup_rreqs(void *rreqs);
 
@@ -107,6 +107,7 @@ extern int msg_size;
 extern int want_thr_support;
 extern int intra_node;
 extern int verify_mode;
+extern int persistent;
 
 extern int my_host_idx, my_rank_idx, my_leader;
 extern int my_partner, i_am_sender;

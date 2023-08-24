@@ -28,6 +28,7 @@ int generate_graphs = 0;
 int enable_target_compute = 0;
 int prec_count = 0;
 int all_sizes = 1;
+int persistent = 0;
 
 int my_host_idx = -1, my_rank_idx = -1, my_leader = -1;
 int my_partner, i_am_sender = 0;
@@ -259,6 +260,9 @@ void process_args(int argc, char **argv) {
         case 'c':
             enable_target_compute = 1;
             prec_count = atoi(optarg);
+            break;
+        case 'p':
+            persistent = 1;
             break;
         default:
             c = -1;
@@ -607,7 +611,7 @@ void *worker_nb(void *info) {
 
     /* start the benchmark */
     if (i_am_sender) {
-        void *sreqs = init_sreqs(win_size, (void *)databuf, msg_size, tag);
+        void *sreqs = init_sreqs(win_size, (void *)databuf, msg_size, tag, tinfo);
 
         /* Warmup first */
         for (i = 0; i < warmup; i++) {
@@ -644,7 +648,7 @@ void *worker_nb(void *info) {
         etime = MPI_Wtime();
         cleanup_sreqs(sreqs);
     } else {
-        void *rreqs = init_rreqs(win_size, (void *)databuf, msg_size, tag);
+        void *rreqs = init_rreqs(win_size, (void *)databuf, msg_size, tag, tinfo);
 
         /* Warmup first */
         for (i = 0; i < warmup; i++) {
